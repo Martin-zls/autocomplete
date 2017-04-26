@@ -16,3 +16,7 @@
   background: #f0f0f0;
   cursor: pointer;
 }
+
+#autoCompleteList li .sign{
+  color: red;
+}

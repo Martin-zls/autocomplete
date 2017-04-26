@@ -1,24 +1,40 @@
 (function($){
     $.fn.nt_autoComplete = function (parameter) {
         var myParam = {
-            suggestMark: true
-        };
-        var param = $.extend(myParam,parameter);
-        var _this = this;
-        var place = getplace(_this);
-        var keyuptime = null,inputValue;
+                suggestMark: true,
+                listOffsetX: 0,
+                listOffsetY: 18,
+                //是否允许自定义
+                customize: false
+            },
+            triggerEventArr = ['keyup','focus'];
+        var param = $.extend(myParam,parameter),
+            _this = this,
+            place = getplace(_this),
+            keyuptime = null,inputValue;
+
+        if($.inArray(param.trigger, triggerEventArr)>=0){
+            _this.on(param.trigger,keyUpEvent);
+        }else{
+            _this.on('keyup',keyUpEvent);
+        }
 
 
-        _this.on('keyup',keyUpEvent);
         function keyUpEvent(){
-            inputValue = $(this).val();
+            inputValue = $.trim($(this).val());
+            $(this).val(inputValue);
+            if(inputValue===''){
+                _this.removeAttr('data-clear');
+            }else{
+                _this.attr('data-clear','true');
+            }
 
             clearTimeout(keyuptime);
             $(this).find('#autoCompleteList').remove();
 
             keyuptime = setTimeout(function (){
                 if(param.keyUpEvent && param.keyUpEvent(inputValue,newcomlist)!==false){
-                    console.log('abc');
+                    //
                 }
             },300)
 
@@ -26,6 +42,9 @@
 
         _this.on('blur',blurEvent);
         function blurEvent(){
+            if(param.customize === false){
+                _this.val('');
+            }
             setTimeout(function(){
                 $('#autoCompleteList').remove();
             },300);
@@ -40,7 +59,8 @@
 
             if(param.render){
                 for(var i=0,len=data.length;i<len;i++ ){
-                    htmlstr += '<li data-eq="'+i+'">'+param.render(data[i])+'</li>';
+                    var content = param.render(data[i]).replace(inputValue,'<span class="sign">'+inputValue+'</span>');
+                    htmlstr += '<li data-eq="'+i+'">'+content+'</li>';
                 }
             }else{
                 for(var i=0,len=data.length;i<len;i++ ){
@@ -58,12 +78,13 @@
 
             $('#autoCompleteList').css({
                 'position': 'absolute',
-                'top': place.top+18+'px',
-                'left' : place.left +'px'
+                'top': (place.top+param.listOffsetY)+'px',
+                'left' : (place.left+param.listOffsetX) +'px'
             }).on('click','li',function(){
                 var i = $(this).data('eq');
                 if(param.selectEvent && param.selectEvent(data[i],_this)!==false){
-                    $(this).val(data[i].value)
+                    $(this).val(data[i].value);
+                    _this.attr('data-clear','false');
                 }
             });
         }
